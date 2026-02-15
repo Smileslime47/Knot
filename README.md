@@ -1,3 +1,5 @@
+﻿[README in Chinese](README_CN.md)
+
  # Knot - A Rope Data Structure Library Implemented in Kotlin
 
 ## Why Use Rope?

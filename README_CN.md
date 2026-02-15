@@ -1,3 +1,5 @@
+﻿[English README](README.md)
+
 # Knot - 一个基于Kotlin实现的Rope数据结构库
 
 ## 为什么要用Rope
