@@ -1,6 +1,7 @@
 ﻿package moe.saikyo47.rope.index
 
 import moe.saikyo47.tree.OrderStatisticTreap
+import moe.saikyo47.tree.OrderStatisticTree
 import moe.saikyo47.tree.TreapNode
 
 /**
@@ -10,9 +11,11 @@ import moe.saikyo47.tree.TreapNode
  * - 支持高效的批量插入 (addAll) 和批量删除 (removeRange)
  * - 维护 ContentReference 的双向绑定关系 (rank 反查能力)
  */
-class IndexedRope<E> : AbstractMutableList<IndexRef<E>>() {
+class IndexedRope<E>(
+    private val treeFactory: () -> OrderStatisticTree<IndexRef<E>, TreapNode<IndexRef<E>>> = { OrderStatisticTreap() }
+) : AbstractMutableList<IndexRef<E>>() {
 
-    private var tree = OrderStatisticTreap<IndexRef<E>>()
+    private var tree: OrderStatisticTree<IndexRef<E>, TreapNode<IndexRef<E>>> = treeFactory()
     override val size: Int get() = tree.size
 
     // ---------------- List 越界检查 ----------------
@@ -143,7 +146,7 @@ class IndexedRope<E> : AbstractMutableList<IndexRef<E>>() {
             removeRange(0, size)
         }
         // 彻底重置 (防御性)
-        tree = OrderStatisticTreap()
+        tree = treeFactory()
     }
 
     override fun iterator(): MutableIterator<IndexRef<E>> = IndexedRopeIterator(this)

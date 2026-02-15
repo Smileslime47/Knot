@@ -8,19 +8,19 @@
  * 2. 逻辑统一：单点操作只是批量操作的特例，一切增删皆为 Split/Merge。
  * 3. 稳定性：完全依赖随机优先级 (Random Priority) 维护平衡，无复杂的不变量校验。
  */
-internal class OrderStatisticTreap<T : Any> {
+class OrderStatisticTreap<T : Any> : OrderStatisticTree<T, TreapNode<T>> {
 
     var root: TreapNode<T>? = null
         private set
 
-    val size: Int get() = root?.size ?: 0
+    override val size: Int get() = root?.size ?: 0
     fun isEmpty(): Boolean = root == null
 
     // ============================================================
     // 查询 API (Rank / Select) - 保持 O(log N)
     // ============================================================
 
-    fun select(index: Int): TreapNode<T> {
+    override fun select(index: Int): TreapNode<T> {
         if (index !in 0 until size) throw IndexOutOfBoundsException("index=$index, size=$size")
         var x = root
         var i = index
@@ -38,7 +38,7 @@ internal class OrderStatisticTreap<T : Any> {
         throw IllegalStateException("Select failed")
     }
 
-    fun rank(node: TreapNode<T>): Int {
+    override fun rank(node: TreapNode<T>): Int {
         var r = (node.left?.size ?: 0)
         var x = node
         while (x.parent != null) {
@@ -56,7 +56,7 @@ internal class OrderStatisticTreap<T : Any> {
     // ============================================================
 
     /** 单点插入 */
-    fun insertAt(index: Int, value: T): TreapNode<T> {
+    override fun insertAt(index: Int, value: T): TreapNode<T> {
         val node = TreapNode(value)
         val (left, right) = split(root, index)
         // 逻辑：Left + Node + Right
@@ -77,13 +77,13 @@ internal class OrderStatisticTreap<T : Any> {
         return node
     }
 
-    fun delete(node: TreapNode<T>) {
+    override fun delete(node: TreapNode<T>) {
         val index = rank(node)
         deleteAt(index)
     }
 
     /** 批量插入 */
-    fun insertRange(index: Int, values: Collection<T>, onNodeCreated: (T, TreapNode<T>) -> Unit) {
+    override fun insertRange(index: Int, values: Collection<T>, onNodeCreated: (T, TreapNode<T>) -> Unit) {
         if (values.isEmpty()) return
 
         // 1. O(M) 构建临时树
@@ -95,7 +95,7 @@ internal class OrderStatisticTreap<T : Any> {
     }
 
     /** 批量删除 */
-    fun deleteRange(index: Int, count: Int, onNodeDeleted: (TreapNode<T>) -> Unit) {
+    override fun deleteRange(index: Int, count: Int, onNodeDeleted: (TreapNode<T>) -> Unit) {
         if (count <= 0) return
         if (index < 0 || index + count > size) throw IndexOutOfBoundsException()
 
@@ -217,7 +217,7 @@ internal class OrderStatisticTreap<T : Any> {
         return x
     }
 
-    fun successorOrNull(node: TreapNode<T>): TreapNode<T>? {
+    override fun successorOrNull(node: TreapNode<T>): TreapNode<T>? {
         var x = node
         if (x.right != null) {
             var curr = x.right!!

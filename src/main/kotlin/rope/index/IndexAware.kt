@@ -9,20 +9,21 @@
  * class Index:LineAware<Index>
  * override val ref: LineReference<Cli> = LineReference(this)
  */
-abstract class IndexAware<E>() {
-    private var _ref: IndexRef<E>? = null
-    var ref: IndexRef<E>?
+abstract class IndexAware<E> {
+    internal var _ref: IndexRef<E>? = null
+    internal var ref: IndexRef<E>?
         get() = _ref
         set(value) {
-            require(value?.value == this) { "Reference value must be this instance!" }
+            require(value?.value == this) { "Reference value must be self instance." }
             _ref = value
         }
 
     val index: Int get() = ref?.index ?: -1
-}
 
-fun <E : IndexAware<E>> E.createLineRef() {
-    this.ref = ElementRef<E>(this)
+    init{
+        @Suppress("UNCHECKED_CAST")
+        this.ref = ElementRef<E>(this as E)
+    }
 }
 
 fun <E : IndexAware<E>> List<E?>.toRefList(): List<IndexRef<E>> {
