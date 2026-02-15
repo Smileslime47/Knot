@@ -1,4 +1,4 @@
-package moe.saikyo47.rope.index
+﻿package moe.saikyo47.rope.index
 
 /**
  * 给行号映射对象建立与行引用的双向绑定

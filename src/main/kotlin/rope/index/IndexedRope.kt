@@ -1,4 +1,4 @@
-package moe.saikyo47.rope.index
+﻿package moe.saikyo47.rope.index
 
 import moe.saikyo47.tree.OrderStatisticTreap
 import moe.saikyo47.tree.TreapNode
