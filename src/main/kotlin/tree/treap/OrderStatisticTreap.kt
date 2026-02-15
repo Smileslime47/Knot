@@ -1,4 +1,6 @@
-﻿package moe.saikyo47.tree
+﻿package moe.saikyo47.tree.treap
+
+import moe.saikyo47.tree.OrderStatisticTree
 
 /**
  * 顺序统计树堆 (Pure Split/Merge Version)

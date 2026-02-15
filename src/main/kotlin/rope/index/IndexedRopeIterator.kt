@@ -1,42 +1,33 @@
 ﻿package moe.saikyo47.rope.index
 
-import moe.saikyo47.tree.TreapNode
-
 /**
- * LineRope 的可变迭代器：
- * - next() 返回 LineReference<E>（元素本身）
- * - remove() 删除刚刚返回的元素，并解绑它（rope/node 置空）
+ * IndexedRope 的可变迭代器
  */
-class IndexedRopeIterator<E>(
+class IndexedRopeIterator<E : Any>(
     private val rope: IndexedRope<E>
-) : MutableIterator<IndexRef<E>> {
+) : MutableIterator<E> {
 
-    private var nextNode: TreapNode<IndexRef<E>>? =
-        if (rope.isEmpty()) null else rope.nodeAt(0)
+    private var cursor: Int = 0
+    private var lastReturnedIndex: Int = -1
 
-    private var lastNode: TreapNode<IndexRef<E>>? = null
-    private var canRemove: Boolean = false
+    override fun hasNext(): Boolean = cursor < rope.size
 
-    override fun hasNext(): Boolean = nextNode != null
+    override fun next(): E {
+        if (!hasNext()) throw NoSuchElementException()
 
-    override fun next(): IndexRef<E> {
-        val n = nextNode ?: throw NoSuchElementException()
-        lastNode = n
-        canRemove = true
-
-        nextNode = rope.successorOrNull(n)
-        return n.value!!
+        val value = rope[cursor]
+        lastReturnedIndex = cursor
+        cursor += 1
+        return value
     }
 
     override fun remove() {
-        if (!canRemove) throw IllegalStateException("Please call next() before remove()")
-        val n = lastNode ?: throw IllegalStateException("Internal state error: lastNode=null")
+        if (lastReturnedIndex < 0) {
+            throw IllegalStateException("Please call next() before remove()")
+        }
 
-        val e = n.value!!
-        rope.unbindIfNeeded(e)
-        rope.deleteNode(n)
-
-        canRemove = false
-        lastNode = null
+        rope.removeAt(lastReturnedIndex)
+        cursor = lastReturnedIndex
+        lastReturnedIndex = -1
     }
 }

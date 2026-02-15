@@ -1,131 +1,119 @@
 ﻿package moe.saikyo47.rope.index
 
-import moe.saikyo47.tree.OrderStatisticTreap
 import moe.saikyo47.tree.OrderStatisticTree
-import moe.saikyo47.tree.TreapNode
+import moe.saikyo47.tree.TreeNode
+import moe.saikyo47.tree.treap.OrderStatisticTreap
+import java.util.IdentityHashMap
 
 /**
  * LineRope：行颗粒度的 Rope 平衡树结构
  *
- * - 底层：OrderStatisticRbTree<LineReference<E>> (Pure Split/Join Version)
+ * - 底层：OrderStatisticTree<E, TreeNode<E>>
  * - 支持高效的批量插入 (addAll) 和批量删除 (removeRange)
- * - 维护 ContentReference 的双向绑定关系 (rank 反查能力)
+ * - 通过 IdentityHashMap 维护元素与节点绑定，支持 O(logN) 反查 index
  */
-class IndexedRope<E>(
-    private val treeFactory: () -> OrderStatisticTree<IndexRef<E>, TreapNode<IndexRef<E>>> = { OrderStatisticTreap() }
-) : AbstractMutableList<IndexRef<E>>() {
+class IndexedRope<E : Any>(
+    private val treeFactory: () -> OrderStatisticTree<E, TreeNode<E>> =
+        {
+            // 待解决的协变问题
+            @Suppress("UNCHECKED_CAST") (OrderStatisticTreap<E>() as OrderStatisticTree<E, TreeNode<E>>)
+        }
+) : AbstractMutableList<E>() {
+    // 顺序统计平衡树
+    private var tree: OrderStatisticTree<E, TreeNode<E>> = treeFactory()
+    // 用来追踪元素绑定到了树的哪个节点上
+    private val refMap: IdentityHashMap<E, TreeNode<E>> = IdentityHashMap()
 
-    private var tree: OrderStatisticTree<IndexRef<E>, TreapNode<IndexRef<E>>> = treeFactory()
     override val size: Int get() = tree.size
 
-    // ---------------- List 越界检查 ----------------
-
     private fun checkElementIndex(index: Int) {
-        if (index < 0 || index >= size) {
+        if (index !in 0..<size) {
             throw IndexOutOfBoundsException("index=$index, size=$size")
         }
     }
 
     private fun checkPositionIndex(index: Int) {
-        if (index < 0 || index > size) {
+        if (index !in 0..size) {
             throw IndexOutOfBoundsException("index=$index, size=$size")
         }
     }
 
-    // ---------------- 绑定 / 解绑（只针对 ContentReference） ----------------
+    private fun ensureNonExist(element: E) {
+        if (refMap.containsKey(element)) {
+            throw IllegalStateException(
+                "This element is already bound to an IndexedRope node. " +
+                    "Please remove it from the old rope first."
+            )
+        }
+    }
 
-    private fun ensureInsertable(ref: IndexRef<E>) {
-        if (ref is ElementRef) {
-            if (ref.rope != null || ref.node != null) {
-                throw IllegalStateException(
-                    "This ContentReference is already bound to a LineRope/node. " +
-                            "Please clone it or remove it from the old rope first."
-                )
+    private fun ensureNonExistAndNonDuplicate(elements: Collection<E>) {
+        val seen = IdentityHashMap<E, Boolean>(elements.size)
+        for (element in elements) {
+            ensureNonExist(element)
+            if (seen.put(element, true) != null) {
+                throw IllegalStateException("Duplicate element reference in the same batch insert.")
             }
         }
     }
 
-    // bindIfNeeded 签名变了
-    internal fun bindIfNeeded(ref: IndexRef<E>, node: TreapNode<IndexRef<E>>) {
-        if (ref is ElementRef) {
-            ref.rope = this
-            ref.node = node
-        }
+    private fun rankOfNode(node: TreeNode<E>): Int {
+        val typedTree = tree
+        return typedTree.rank(node)
     }
 
-    internal fun unbindIfNeeded(ref: IndexRef<E>) {
-        if (ref is ElementRef) {
-            ref.rope = null
-            ref.node = null
-        }
-    }
-
-    // ---------------- AbstractMutableList 实现 ----------------
-
-    override fun get(index: Int): IndexRef<E> {
+    override fun get(index: Int): E {
         checkElementIndex(index)
         return nodeAt(index).value!!
     }
 
-    override fun set(index: Int, element: IndexRef<E>): IndexRef<E> {
+    override fun set(index: Int, element: E): E {
         checkElementIndex(index)
-        ensureInsertable(element)
 
         val node = nodeAt(index)
         val old = node.value!!
+        if (old === element) return old
 
-        // 旧元素解绑
-        unbindIfNeeded(old)
-
-        // 替换并绑定新元素
+        ensureNonExist(element)
+        refMap.remove(element)
         node.value = element
-        bindIfNeeded(element, node)
+        refMap[element] = node
 
         return old
     }
 
-    override fun add(index: Int, element: IndexRef<E>) {
+    override fun add(index: Int, element: E) {
         checkPositionIndex(index)
-        ensureInsertable(element)
+        ensureNonExist(element)
 
-        // 单点插入委托给 tree.insertAt (底层也是 split/join)
         val node = tree.insertAt(index, element)
-        bindIfNeeded(element, node)
+        refMap[element] = node
     }
 
-    override fun removeAt(index: Int): IndexRef<E> {
+    override fun removeAt(index: Int): E {
         checkElementIndex(index)
 
-        // 为了解绑，必须先拿到 node
         val node = nodeAt(index)
         val removed = node.value!!
 
-        unbindIfNeeded(removed)
-        tree.delete(node)
+        refMap.remove(removed)
+        val typedTree = tree
+        typedTree.delete(node)
 
         return removed
     }
 
-    // ---------------- 🚀 批量操作优化 (Critical for Performance) ----------------
-
-    override fun addAll(index: Int, elements: Collection<IndexRef<E>>): Boolean {
+    override fun addAll(index: Int, elements: Collection<E>): Boolean {
         checkPositionIndex(index)
         if (elements.isEmpty()) return false
 
-        // 预检查绑定状态
-        elements.forEach { ensureInsertable(it) }
-
-        // 委托给树的批量插入，回调处理绑定
-        tree.insertRange(index, elements) { ref, node ->
-            bindIfNeeded(ref, node)
+        ensureNonExistAndNonDuplicate(elements)
+        tree.insertRange(index, elements) { element, node ->
+            refMap[element] = node
         }
         return true
     }
 
-    /**
-     * 暴露给外部的高效批量删除接口。
-     * 虽然 AbstractList 有 protected removeRange，但我们需要 public 入口。
-     */
     public override fun removeRange(fromIndex: Int, toIndex: Int) {
         if (fromIndex == toIndex) return
         if (fromIndex > toIndex) throw IllegalArgumentException("fromIndex($fromIndex) > toIndex($toIndex)")
@@ -133,35 +121,25 @@ class IndexedRope<E>(
         checkPositionIndex(toIndex)
 
         val count = toIndex - fromIndex
-
-        // 委托给树的批量删除，回调处理解绑
         tree.deleteRange(fromIndex, count) { node ->
-            node.value?.let { unbindIfNeeded(it) }
+            node.value?.let { refMap.remove(it) }
         }
     }
 
     override fun clear() {
-        if (size > 0) {
-            // 使用批量删除清空，比迭代快
+        if (isNotEmpty()) {
             removeRange(0, size)
         }
-        // 彻底重置 (防御性)
         tree = treeFactory()
+        refMap.clear()
     }
 
-    override fun iterator(): MutableIterator<IndexRef<E>> = IndexedRopeIterator(this)
+    override fun iterator(): MutableIterator<E> = IndexedRopeIterator(this)
 
-    // ---------------- internal：给 ContentReference.lineNumber 用 ----------------
+    override fun indexOf(element: E): Int {
+        val node = refMap[element] ?: return -1
+        return rankOfNode(node)
+    }
 
-    internal fun rankOf(node: TreapNode<IndexRef<E>>): Int =
-        tree.rank(node)
-
-    internal fun nodeAt(index: Int): TreapNode<IndexRef<E>> =
-        tree.select(index)
-
-    internal fun successorOrNull(node: TreapNode<IndexRef<E>>): TreapNode<IndexRef<E>>? =
-        tree.successorOrNull(node)
-
-    internal fun deleteNode(node: TreapNode<IndexRef<E>>) =
-        tree.delete(node)
+    internal fun nodeAt(index: Int): TreeNode<E> = tree.select(index)
 }

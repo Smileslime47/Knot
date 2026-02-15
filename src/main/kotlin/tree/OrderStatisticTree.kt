@@ -6,7 +6,7 @@ package moe.saikyo47.tree
  * T: 存储值类型
  * N: 树节点句柄类型（用于 rank/successor 等操作）
  */
-interface OrderStatisticTree<T : Any, N : Any> {
+interface OrderStatisticTree<T : Any, N : TreeNode<T>> {
     val size: Int
 
     fun select(index: Int): N
