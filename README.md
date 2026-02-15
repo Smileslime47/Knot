@@ -1,1 +1,1 @@
-# Knot - A Rope Impletation of Kotlin
+# Knot - A Rope implementation of Kotlin
