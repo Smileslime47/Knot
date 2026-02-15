@@ -1,8 +1,5 @@
 ﻿package moe.saikyo47.rope.index
 
-/**
- * IndexedRope 的可变迭代器
- */
 class IndexedRopeIterator<E : Any>(
     private val rope: IndexedRope<E>
 ) : MutableIterator<E> {

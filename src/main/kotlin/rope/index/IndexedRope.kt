@@ -6,22 +6,20 @@ import moe.saikyo47.tree.treap.OrderStatisticTreap
 import java.util.IdentityHashMap
 
 /**
- * LineRope：行颗粒度的 Rope 平衡树结构
+ * A Rope supports operations with O(logN) complexity, including add, set, get, indexOf, and more
  *
- * - 底层：OrderStatisticTree<E, TreeNode<E>>
- * - 支持高效的批量插入 (addAll) 和批量删除 (removeRange)
- * - 通过 IdentityHashMap 维护元素与节点绑定，支持 O(logN) 反查 index
+ * @param E element
  */
 class IndexedRope<E : Any>(
     private val treeFactory: () -> OrderStatisticTree<E, TreeNode<E>> =
         {
-            // 待解决的协变问题
+            // Pending covariance issues
             @Suppress("UNCHECKED_CAST") (OrderStatisticTreap<E>() as OrderStatisticTree<E, TreeNode<E>>)
         }
 ) : AbstractMutableList<E>() {
-    // 顺序统计平衡树
+    // The underlying data structure that handles the actual storage and operations
     private var tree: OrderStatisticTree<E, TreeNode<E>> = treeFactory()
-    // 用来追踪元素绑定到了树的哪个节点上
+    // Maps each element to its corresponding node in the tre
     private val refMap: IdentityHashMap<E, TreeNode<E>> = IdentityHashMap()
 
     override val size: Int get() = tree.size
