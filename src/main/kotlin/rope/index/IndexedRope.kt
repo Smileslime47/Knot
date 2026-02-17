@@ -73,7 +73,7 @@ class IndexedRope<E : Any>(
         if (old === element) return old
 
         ensureNonExist(element)
-        refMap.remove(element)
+        refMap.remove(old)
         node.value = element
         refMap[element] = node
 
