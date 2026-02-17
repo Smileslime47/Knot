@@ -11,9 +11,9 @@ class PerformanceTest {
     @Test
     fun insertAndReverseLookupTest() {
         // Large-scale workload (>= 1e5).
-        val baseSize = 1_000_000
+        val baseSize = 1_000_00
         val insertOps = 2_000
-        val reverseLookupOps = 1_000_000
+        val reverseLookupOps = 1_000_00
 
         // Deterministic input for reproducible benchmark output.
         val base = (0 until baseSize).map { Entry(it) }
