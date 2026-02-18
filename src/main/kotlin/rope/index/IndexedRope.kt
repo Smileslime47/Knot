@@ -1,7 +1,6 @@
 package moe.saikyo47.rope.index
 
 import moe.saikyo47.tree.Tree
-import moe.saikyo47.tree.TreeMetric
 import moe.saikyo47.tree.TreeNode
 import moe.saikyo47.tree.treap.Treap
 import java.util.IdentityHashMap
@@ -12,12 +11,6 @@ class IndexedRope<E : Any>(
         Treap(CountMetric())
     }
 ) : AbstractMutableList<E>() {
-    private class CountMetric<E> : TreeMetric<E, Int> {
-        override val zero: Int = 0
-        override fun measure(value: E): Int = 1
-        override fun combine(a: Int, b: Int): Int = a + b
-    }
-
     private var tree: Tree<E, Int> = treeFactory()
 
     private val refMap: IdentityHashMap<E, TreeNode<E, Int>> = IdentityHashMap()
