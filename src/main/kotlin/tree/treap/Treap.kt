@@ -103,13 +103,14 @@ class Treap<E : Any, M : Any>(private val metric: TreeMetric<E, M>) : Tree<E, M>
     }
 
     override fun <R : Comparable<R>> deleteRange(
-        target: R,
-        count: Int,
+        startTarget: R,
+        endTarget: R,
         selector: (M) -> R,
         onNodeDeleted: (TreeNode<E, M>) -> Unit
     ) {
-        val (leftTree, middleAndRight) = splitByRank(_root, target, metric.zero, selector)
-        val (deletedSubtree, rightTree) = splitBySize(middleAndRight, count)
+        val (leftTree, midAndRight) = splitByRank(_root, startTarget, metric.zero, selector)
+        val leftMetric = leftTree?.metadata ?: metric.zero
+        val (deletedSubtree, rightTree) = splitByRank(midAndRight, endTarget, leftMetric, selector)
         traverseAndPerform(deletedSubtree, onNodeDeleted)
         _root = merge(leftTree, rightTree)
     }

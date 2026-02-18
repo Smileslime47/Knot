@@ -27,8 +27,8 @@ interface Tree<E : Any, M : Any> {
     )
 
     fun <R : Comparable<R>> deleteRange(
-        target: R,
-        count: Int,
+        startTarget: R,
+        endTarget: R,
         selector: (M) -> R,
         onNodeDeleted: (TreeNode<E, M>) -> Unit
     )
