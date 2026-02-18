@@ -24,4 +24,10 @@ Rope的另一个场景在于索引反查上，当你需要快速查询到一个�
 
 ## 性能表现
 
-![img.png](document/img.png)
+![img.png](document/IndexedRopeVsListInsert.png)
+
+![img.png](document/IndexedRopeVsListLookup.png)
+
+![img.png](document/CharRopeVsStringInsert.png)
+
+![img.png](document/CharRopeVsStringLookup.png)

@@ -3,7 +3,7 @@ package moe.saikyo47.tree
 /**
  * An abstraction of Tree
  *
- * @param E The type of value stored in the tree
+ * @param E The type of value stored in the tree, which is only non-null in leaf node
  * @param M The type of subtree aggregate metadata
  */
 interface Tree<E : Any, M : Any> {

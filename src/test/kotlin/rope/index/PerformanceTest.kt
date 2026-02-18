@@ -1,34 +1,42 @@
 ﻿package moe.saikyo47.rope.index
 
+import moe.saikyo47.utils.measureNs
+import moe.saikyo47.utils.nsToMs
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class PerformanceTest {
-    // Keep identity-based equality for indexOf(element) comparison.
+    private val baseSize = 10_000_000
+    private val insertOps = 10_000
+    private val reverseLookupOps = 10_000
+
+    // To ensure the element is identity-based compared
     private class Entry(val id: Int)
 
     @Test
-    fun insertAndReverseLookupTest() {
-        // Large-scale workload (>= 1e5).
-        val baseSize = 1_000_00
-        val insertOps = 2_000
-        val reverseLookupOps = 1_000_00
-
-        // Deterministic input for reproducible benchmark output.
+    fun benchmarkInsertPerformance() {
+        println("[Insert Benchmark] Preparing data (Size: $baseSize)")
         val base = (0 until baseSize).map { Entry(it) }
-        val inserts = (baseSize until baseSize + insertOps).map { Entry(it) }
-        val positionRandom = Random(20260215)
-        val insertPositions = IntArray(insertOps) { i -> positionRandom.nextInt(baseSize + i + 1) }
 
         val list = ArrayList<Entry>(baseSize + insertOps).apply { addAll(base) }
         val rope = IndexedRope<Entry>().apply { addAll(0, base) }
 
+        // prepare operations for test
+        val inserts = (baseSize until baseSize + insertOps).map { Entry(it) }
+        val positionRandom = Random(20260215)
+        val insertPositions = IntArray(insertOps) { i -> positionRandom.nextInt(baseSize + i + 1) }
+
+        println("[Insert Benchmark] Starting tests (Edits: $insertOps)")
+
+        // List test
         val listInsertNs = measureNs {
             for (i in 0 until insertOps) {
                 list.add(insertPositions[i], inserts[i])
             }
         }
+
+        // IndexedRope test
         val ropeInsertNs = measureNs {
             for (i in 0 until insertOps) {
                 rope.add(insertPositions[i], inserts[i])
@@ -37,43 +45,47 @@ class PerformanceTest {
 
         assertEquals(list.size, rope.size, "Size mismatch after insertion workload")
 
-        // Reverse lookup is based on elements, not random indexes.
-        // Both containers use the same queried element instances for fairness.
+        println("List insert (O(N)):            ${nsToMs(listInsertNs)} ms")
+        println("IndexedRope insert (O(log N)): ${nsToMs(ropeInsertNs)} ms")
+        println("Insertion Speedup:             ${"%.2f".format(listInsertNs.toDouble() / ropeInsertNs)}x")
+    }
+
+    @Test
+    fun benchmarkLookupPerformance() {
+        println("[Lookup Benchmark] Preparing data (Size: $baseSize)")
+        val base = (0 until baseSize).map { Entry(it) }
+
+        val list = ArrayList<Entry>(baseSize + insertOps).apply { addAll(base) }
+        val rope = IndexedRope<Entry>().apply { addAll(0, base) }
+
         val queryRandom = Random(20260216)
         val queryElements = Array(reverseLookupOps) {
             val idx = queryRandom.nextInt(list.size)
             list[idx]
         }
 
+        println("[Lookup Benchmark] Starting tests (Lookups: $reverseLookupOps)")
+
+        // List test
         var listChecksum = 0L
-        val listReverseLookupNs = measureNs {
+        val listLookupNs = measureNs {
             for (element in queryElements) {
                 listChecksum += list.indexOf(element).toLong()
             }
         }
 
+        // IndexedRope test
         var ropeChecksum = 0L
-        val ropeReverseLookupNs = measureNs {
+        val ropeLookupNs = measureNs {
             for (element in queryElements) {
                 ropeChecksum += rope.indexOf(element).toLong()
             }
         }
 
-        // Verify both implementations produce the same logical lookup result.
         assertEquals(listChecksum, ropeChecksum, "Reverse lookup checksum mismatch")
 
-        println("=== Performance Comparison (base=$baseSize, inserts=$insertOps, reverseLookups=$reverseLookupOps) ===")
-        println("ArrayList insert: ${nsToMs(listInsertNs)} ms")
-        println("IndexedRope insert: ${nsToMs(ropeInsertNs)} ms")
-        println("ArrayList reverse lookup(indexOf): ${nsToMs(listReverseLookupNs)} ms")
-        println("IndexedRope reverse lookup(indexOf): ${nsToMs(ropeReverseLookupNs)} ms")
+        println("List scan for line (O(N)):             ${nsToMs(listLookupNs)} ms")
+        println("IndexedRope getLineStart (O(log N)):   ${nsToMs(ropeLookupNs)} ms")
+        println("Line Lookup Speedup:                   ${"%.2f".format(listChecksum.toDouble() / ropeLookupNs)}x")
     }
-
-    private inline fun measureNs(block: () -> Unit): Long {
-        val start = System.nanoTime()
-        block()
-        return System.nanoTime() - start
-    }
-
-    private fun nsToMs(ns: Long): String = "%.3f".format(ns / 1_000_000.0)
 }

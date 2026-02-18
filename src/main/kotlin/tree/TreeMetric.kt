@@ -1,5 +1,8 @@
 package moe.saikyo47.tree
 
+/**
+ * The calculator to combine the metadata of tree node
+ */
 interface TreeMetric<E, M> {
     val zero: M
 

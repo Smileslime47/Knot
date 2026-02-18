@@ -27,4 +27,10 @@ I am currently refactoring the codebase to make it more robust and versatile. Ke
 
 ## Performance
 
-![img.png](document/img.png)
+![img.png](document/IndexedRopeVsListInsert.png)
+
+![img.png](document/IndexedRopeVsListLookup.png)
+
+![img.png](document/CharRopeVsStringInsert.png)
+
+![img.png](document/CharRopeVsStringLookup.png)

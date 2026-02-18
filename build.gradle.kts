@@ -20,3 +20,8 @@ kotlin {
 tasks.test {
     useJUnitPlatform()
 }
+
+tasks.withType<Test> {
+    maxHeapSize = "2g"
+    minHeapSize = "512m"
+}

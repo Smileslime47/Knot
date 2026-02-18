@@ -1,9 +1,10 @@
 package moe.saikyo47.tree
 
 /**
+ * A tree's node
  *
- * @param E element value,which is only non-null in leaf node
- * @param M metadata,to aggregate the metric of subtree
+ * @param E The type of value stored in the tree, which is only non-null in leaf node
+ * @param M The type of subtree aggregate metadata
  */
 abstract class TreeNode<E : Any, M : Any>(
     var value: E? = null,
