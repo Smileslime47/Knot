@@ -85,10 +85,7 @@ class IndexedRope<E : Any>(
 
     public override fun removeRange(fromIndex: Int, toIndex: Int) {
         if (fromIndex == toIndex) return
-        if (fromIndex > toIndex) throw IllegalArgumentException("fromIndex($fromIndex) > toIndex($toIndex)")
-
-        checkWriteIndex(fromIndex)
-        checkWriteIndex(toIndex)
+        checkWriteRange(fromIndex, toIndex)
 
         tree.deleteRange(fromIndex, toIndex, sizeSelector) { node ->
             node.value?.let { refMap.remove(it) }
@@ -119,6 +116,12 @@ class IndexedRope<E : Any>(
     private fun checkWriteIndex(index: Int) {
         if (index !in 0..size) {
             throw IndexOutOfBoundsException("index=$index, size=$size")
+        }
+    }
+
+    private fun checkWriteRange(start: Int, end: Int) {
+        if (start < 0 || end > size || start > end) {
+            throw IndexOutOfBoundsException("range=[$start, $end], size=$size")
         }
     }
 
