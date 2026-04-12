@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "moe.smileslime47"
-version = "1.0-SNAPSHOT"
+version = "1.0.0"
 
 repositories {
     mavenCentral()
@@ -42,6 +42,8 @@ publishing {
     publications {
         create<MavenPublication>("release") {
             from(components["kotlin"])
+            artifact(tasks.named("sourcesJar"))
+            artifact(tasks.named("javadocJar"))
 
             artifactId = "Knot"
             groupId = project.group.toString()
@@ -49,7 +51,7 @@ publishing {
 
             pom {
                 name.set("Knot")
-                description.set("A Rope Data Structure Library Impl emented in Kotlin")
+                description.set("A Rope Data Structure Library Implemented in Kotlin")
                 url.set("https://github.com/Smileslime47/Knot")
                 licenses {
                     license {
@@ -60,9 +62,13 @@ publishing {
                 developers {
                     developer {
                         id.set("Smile_slime_47")
-                        name.set("Smile slime 47")
+                        name.set("Smile_slime_47")
                         email.set("Smile_slime_47@outlook.com")
                     }
+                }
+                issueManagement {
+                    system.set("GitHub Issues")
+                    url.set("https://github.com/Smileslime47/Knot/issues")
                 }
                 scm {
                     connection.set("scm:git:git@github.com:Smileslime47/Knot.git")
@@ -75,18 +81,7 @@ publishing {
 
     repositories {
         maven {
-            name = "OSSRH"
-            val releasesRepoUrl = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
-            val snapshotsRepoUrl = uri("https://s01.oss.sonatype.org/service/local/repositories/snapshots/content/")
-            url = if (version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl
-
-            credentials {
-                username = project.findProperty("ossrhUsername")?.toString()
-                password = project.findProperty("ossrhPassword")?.toString()
-            }
-        }
-        maven {
-            name = "LocalTest"
+            name = "LocalRepo"
             url = uri("${rootProject.buildDir}/repo")
         }
     }
